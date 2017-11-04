@@ -9,6 +9,18 @@ var gearArray = [];
 
 var damageTypesArray = ["blade", "pierce", "impact", "fire", "cold", "arcane"];
 
+var player = {
+		HP: 20,
+		mDamage: 3,
+		mAttacks: 2,
+		mDamageType: "impact",
+		rDamage: 0,
+		rAttacks: 0,
+		rDamageType: "impact",
+		resist: {all: 0.0},
+		defence: {castle: 0.6, flat:0.4}		
+}
+
 var bossesArray = [
 	{
 		name: "Orcish Warlord",
@@ -249,8 +261,8 @@ function runGame(position) {
 	// Procedurally generate "heat" for the current location
 	
 	// If digging, generate loot
-	//if (stage > 0 && stage < 4) {
-	if (stage > 0) {
+	if (stage > 0 && stage < 4) {
+	//if (stage > 0) {
 	
 		var seedA = (targetLat + targetLon);
 		seedA = seedA - Math.floor(seedA);
@@ -311,9 +323,22 @@ function runGame(position) {
 		
 		// Print out the latest gear
 		outputBuffer += JSON.stringify(newGear, null);
+		console.log(JSON.stringify(newGear, null));
 		
 		// Convert stage to a 0-based index & store in global array
-		gearArray[stage-2] = newGear;
+		gearArray[stage-1] = newGear;
+	}
+	
+	if (stage > 3) {
+		
+		console.log("Player before: " + JSON.stringify(player, null));
+		
+		applyGear();
+		
+		outputBuffer += "Player: " + JSON.stringify(player,null);
+		
+		resolveBoss();
+		
 	}
 		
 	if (distance < 20) {
@@ -350,7 +375,7 @@ function generateWeapon(heatA, heatB, heatC, gameX, gameY) {
 			var newDamage = Math.max(1, 64 * heatA);
 			
 			newGear.attacks = Math.ceil(Math.random() * 6);
-			newGear.hitDamage = Math.ceil(newDamage / newGear.attacks);
+			newGear.damage = Math.ceil(newDamage / newGear.attacks);
 	
 			// Generate attack type
 			console.info("damageType seed " + gameX % 6);			
@@ -442,8 +467,9 @@ function generateArmour(heatA, heatB, heatC, gameX, gameY) {
 	
 	var newArmour = {
 						type: "armour",
-						defence: {},
-						resist: {}
+						HP: 0,
+						defence: {castle: 0.0, flat: 0.0},
+						resist: {all: 0}
 					};
 	
 	var EHPBonus = Math.round(heatB * 80);
@@ -495,8 +521,8 @@ function generateMagical(heatA, heatB, heatC, gameX, gameY) {
     
     var newMagical = {
         type: "magical item",
-        defence: {},
-        resist: {},
+        defence: {all: 0},
+        resist: {all: 0},
         adjective: "",
         noun: "Ring"
     };
@@ -536,6 +562,77 @@ function generateMagical(heatA, heatB, heatC, gameX, gameY) {
     return newMagical;
     
 }
+
+function applyGear() {
+
+	console.log("applyGear()");
+	
+	for (var gearIndex = 0; gearIndex < gearArray.length; gearIndex++) {
+		
+		var thisGear = gearArray[gearIndex];
+		
+		console.log("Applying " + gearIndex + ":" + JSON.stringify(thisGear,null));
+		
+		switch (gearArray[gearIndex].type) {
+			case "weapon":
+				switch (thisGear.reach) {
+					case "melee":
+						player.mDamage = thisGear.damage;
+						player.mAttacks = thisGear.attacks;
+						player.mDamageType = thisGear.damageType;
+						break;
+					case "ranged":
+						player.rDamage = thisGear.damage;
+						player.rAttacks = thisGear.attacks;
+						player.rDamageType = thisGear.damageType;
+						break;
+				}
+				break;
+			case "armour":
+				player.HP = player.HP + thisGear.HP;
+				player.resist.all = player.resist.all + thisGear.resist.all;
+				
+				for (var key in player.defence) {
+					var value = player.defence[key];
+					//console.log(JSON.stringify(value));
+					player.defence[key] = player.defence[key] + thisGear.defence[key];
+				
+				}				
+				break;
+			case "magical item":
+			
+				//
+			
+				player.resist.all = player.resist.all + thisGear.resist.all;
+				
+				//player.defence.all = player.defence.all + thisGear.defence.all;
+				
+				for (var key in player.defence) {
+					var value = player.defence[key];
+					//console.log(JSON.stringify(value));
+					player.defence[key] = player.defence[key] + thisGear.defence[key];
+				}
+				
+				
+				player.mDamageType = thisGear.damageType;
+				player.rDamageType = thisGear.damageType;
+				break;
+		}
+		
+		console.log("Player update: " + JSON.stringify(player, null));
+	}
+}
+
+
+
+function resolveBoss() {
+
+	var yourTurn = false; // Start on the defensive (so firststrike can help)
+	
+	var boss = bossesArray[bossNum];
+	
+
+};
 
 // Avoid debugging in here - it gets called a lot
 function mapGen(drawX, drawY, gameRadius) {
