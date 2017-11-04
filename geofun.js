@@ -7,9 +7,12 @@ var bossNum = 0;
 
 var gearArray = [];
 
+var damageTypesArray = ["blade", "pierce", "impact", "fire", "cold", "arcane"];
+
 var bossesArray = [
 	{
 		name: "Orcish Warlord",
+                level: 3,
 		HP: 78,
 		mAttacks: 3,
 		mDamage: 15,
@@ -18,10 +21,10 @@ var bossesArray = [
 		resist: {all: 0},
 		defence: {castle: 0.6, flat: 0.4}
 	}
-	/**
 	,
 	{
 		name: "Saurian Flanker",
+                level: 3,
 		HP: 47,
 		mAttacks: 4,
 		mDamage: 8,
@@ -30,11 +33,11 @@ var bossesArray = [
 		resist: {all: -0.1},
 		defence: {castle: 0.6, flat: 0.4}		
 	}
-	*/
 	,
 	{
 		name: "Dread Bat",
-		HP: 33,
+		level: 2,
+                HP: 33,
 		mAttacks: 4,
 		mDamage: 6,
 		rAttacks: 0,
@@ -43,9 +46,22 @@ var bossesArray = [
 		defence: {castle: 0.6, flat: 0.6}
 	}
 	,	
+        {
+		name: "Elvish Marksman",
+		level: 2,
+                HP: 37,
+		mDamage: 6,
+                mAttacks: 2,
+		rDamage: 9,
+                rAttacks: 4,
+		resist: {all: 0.05},
+		defence: {castle: 0.6, flat: 0.6}
+	}
+	,
 	{
 		name: "Dwarf Fighter",
-		HP: 38,
+		level: 1,
+                HP: 38,
 		mAttacks: 3,
 		mDamage: 7,
 		rAttacks: 0,
@@ -53,6 +69,18 @@ var bossesArray = [
 		resist: {all: 0.15},
 		defence: {castle: 0.6, flat: 0.3}
 	}
+        ,
+        {
+                name: "Thug",
+		level: 1,
+                HP: 32,
+                mDamage: 5,	
+                mAttacks: 4,
+		rAttacks: 0,
+		rDamage: 0,
+		resist: {all: 0.03},
+		defence: {castle: 0.6, flat: 0.4}
+        }
 ];			
 
 playButton.addEventListener("click", main); // 
@@ -107,7 +135,9 @@ function runGame(position) {
 	
 	}
 		
-	outputBuffer += p("Today's boss is: " + bossesArray[bossNum].name);
+	outputBuffer += p("Today's boss is: ");
+        
+        outputBuffer += p(JSON.stringify(bossesArray[bossNum]));
 	
 	var targetLat = 51.487115;
 	var targetLon = -0.206021;
@@ -149,7 +179,7 @@ function runGame(position) {
 	var gameLat = userLat - originLat;
 	var gameLon = userLon - originLon;
 	
-	outputBuffer += p("You are at relative coords " + gameLat + ", " + gameLon);
+	console.log("You are at relative coords " + gameLat + ", " + gameLon);
 	
 	// 1 degree longitude is about 70km at UK latitude
 	// 1 degree latitude is about 110km
@@ -238,9 +268,9 @@ function runGame(position) {
 		noise.seed(seedC);
 		var heatC = mapGen(gameX,gameY, gameRadius);
 		
-		outputBuffer += p("seedA is " + seedA);
-		outputBuffer += p("seedB is " + seedB);
-		outputBuffer += p("seedC is " + seedC);
+		console.log("seedA is " + seedA);
+		console.log("seedB is " + seedB);
+		console.log("seedC is " + seedC);
 		
 		outputBuffer += p("heatA here is " + heatA);
 		outputBuffer += p("heatB here is " + heatB);
@@ -248,15 +278,15 @@ function runGame(position) {
 
 		// Factors in a fight in Wesnoth
 		
-		// your HP									 A
+		// your HP				     A
 		// Your attacks                              W
 		// your dam                                  W
 		// their attacks
 		// their dam
 		// RANGED/MELEE                              W
-		// Your protection profile                   A/M
+		// Your defence profile                      A/M
 		// Your terrain
-		// Their protection profile
+		// Their defence profile
 		// Their terrain
 		// Your damage type                          W/M
 		// Their resistances
@@ -276,7 +306,7 @@ function runGame(position) {
 		} else if (heatB >= heatA && heatB >= heatC) {
 			newGear = generateArmour(heatA, heatB, heatC, gameX, gameY);
 		} else if (heatC >= heatA && heatC >= heatB) {
-			outputBuffer += p("magical");
+			newGear = generateMagical(heatA, heatB, heatC, gameX, gameY);
 		}
 		
 		// Print out the latest gear
@@ -324,7 +354,7 @@ function generateWeapon(heatA, heatB, heatC, gameX, gameY) {
 	
 			// Generate attack type
 			console.info("damageType seed " + gameX % 6);			
-			newGear.damageType = ["blade","pierce","impact","fire","cold","arcane"][Math.abs(gameX % 6)];
+			newGear.damageType = damageTypesArray[Math.abs(gameX % damageTypesArray.length)];
 
 			// Weapon ADJECTIVE
 			if (heatA < 0.25) { newGear.adjective = "Crude"; }
@@ -418,7 +448,7 @@ function generateArmour(heatA, heatB, heatC, gameX, gameY) {
 	
 	var EHPBonus = Math.round(heatB * 80);
 	
-	var defenceBonus = round(Math.min(heatB),1);
+	var defenceBonus = round(heatB * 0.3,1);
 	
 	// Weapon ADJECTIVE
 		if (heatB < 0.25) { newArmour.adjective = "Crude"; }
@@ -447,6 +477,64 @@ function generateArmour(heatA, heatB, heatC, gameX, gameY) {
 
 	
 	return newArmour;
+}
+
+/**
+ * A magical item which might 
+ * 
+ * @param {type} heatA
+ * @param {type} heatB
+ * @param {type} heatC
+ * @param {type} gameX
+ * @param {type} gameY
+ * @returns {undefined}
+ */
+function generateMagical(heatA, heatB, heatC, gameX, gameY) {
+    
+    console.info("generateMagical()");
+    
+    var newMagical = {
+        type: "magical item",
+        defence: {},
+        resist: {},
+        adjective: "",
+        noun: "Ring"
+    };
+    
+    // Magical ADJECTIVE
+	if (heatC < 0.25) { newMagical.adjective = "Crude"; }
+	else if (heatC >= 0.25 && heatC < 0.5) { newMagical.adjective = ""; }
+	else if (heatC >= 0.5 && heatC < 0.75) { newMagical.adjective = "Fine"; }
+	else if (heatC >= 0.75) { newMagical.adjective = "Epic"; }
+    
+    if (Math.abs(gameY % 2) == 0) {
+        // Defensive item
+        if (Math.abs((gameX) % 2)) {
+            newMagical.defence.all = round(heatC * 0.3,1);
+            newMagical.noun = "Ring of Defence";
+        }
+        else
+        {
+           newMagical.resist.all = round(heatC * 0.3,1);
+           newMagical.noun = "Ring of Resistance";
+        }
+    }
+    else
+    {
+        // Offensive item
+        if (Math.abs(gameY % 2) == 0) {
+            newMagical.minHit = round(0.4 + (heatC * 0.3));
+            newMagical.noun = "Ring of Accuracy";
+        }
+        else
+        {
+            newMagical.damageType = damageTypesArray[Math.floor(Math.random() * damageTypesArray.length)];
+            newMagical.noun = "Ring of " + newMagical.damageType;
+        }
+    }
+    
+    return newMagical;
+    
 }
 
 // Avoid debugging in here - it gets called a lot
