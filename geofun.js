@@ -9,17 +9,40 @@ var gearArray = [];
 
 var damageTypesArray = ["blade", "pierce", "impact", "fire", "cold", "arcane"];
 
-var player = {
-		HP: 20,
-		mDamage: 3,
-		mAttacks: 2,
-		mDamageType: "impact",
-		rDamage: 0,
-		rAttacks: 0,
-		rDamageType: "impact",
-		resist: {all: 0.0},
-		defence: {castle: 0.6, flat:0.4}		
+function unit(hp, weapons, resist, defence) {
+	this.HP = hp;
+	this.weapons = weapons;
+        this.resist = resist;
+        this.defence = defence;
 }
+
+function weapon(name, damageType, damage, attacks) {
+    this.name = name;
+    this.damageType = damageType;
+    this.damage = damage;
+    this.attacks = attacks;
+}
+
+function damageTypes(blade, pierce, impact, fire, cold, arcane) {
+    this.blade = blade;
+    this.pierce = pierce;
+    this.impact = impact;
+    this.fire = fire;
+    this.cold = cold;
+    this.arcane = arcane;
+}
+
+function terrainTypes(castle, flat) {
+    this.castle = castle;
+    this.flat = flat;
+}
+
+var player = new unit(
+        20, 
+        {melee: new weapon("Fists", "impact", 3, 2)},
+	new damageTypes(0.0,0.0,0.0,0.0,0.0,0.2),
+	new terrainTypes(0.6, 0.4)
+);
 
 var bossesArray = [
 	{
